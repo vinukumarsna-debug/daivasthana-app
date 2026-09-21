@@ -12,18 +12,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract Android project
+      - name: Find and extract Android project ZIP
         run: |
+          ZIP=$(find . -maxdepth 2 -type f -iname "*.zip" | head -1)
+
+          if [ -z "$ZIP" ]; then
+            echo "ERROR: No ZIP file found"
+            exit 1
+          fi
+
+          echo "Found ZIP: $ZIP"
+
           mkdir project
-          unzip -q DaivasthanaApp_Android_Project.zip -d project
+          unzip -q "$ZIP" -d project
 
       - name: Find project folder
         run: |
           if [ -f project/settings.gradle ]; then
-            echo "PROJECT_DIR=project" >> $GITHUB_ENV
+            echo "PROJECT_DIR=project" >> "$GITHUB_ENV"
           else
             DIR=$(find project -name settings.gradle -print -quit | xargs dirname)
-            echo "PROJECT_DIR=$DIR" >> $GITHUB_ENV
+
+            if [ -z "$DIR" ]; then
+              echo "ERROR: settings.gradle not found"
+              exit 1
+            fi
+
+            echo "PROJECT_DIR=$DIR" >> "$GITHUB_ENV"
           fi
 
       - name: Set up JDK 17
